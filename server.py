@@ -1,8 +1,7 @@
+import json
 import socket
 import threading
-import json
 import time
-import sys
 
 from rich.console import Console
 
@@ -90,7 +89,7 @@ def handle(client, admin=False):
                         kick_client.send("KICK".encode())
                         kick_client.close()
                     except Exception as ex:
-                        client.send("[red][!] A error occurred: " + str(ex) + "".encode())
+                        client.send(f"[red][!] A error occurred: {str(ex)}".encode())
                 elif command.startswith("/unban "):
                     is_command = True
                     command = command[7:]
@@ -169,6 +168,7 @@ def commands():
         try:
             command = input()
         except:
+            command = ""
             exit(0)
 
         if command.startswith("kick "):
@@ -191,6 +191,15 @@ def commands():
 
             try:
                 try:
+                    banned_clients = []
+                    for client in clients:
+                        if client.getpeername()[0] == command:
+                            client.send("BAN".encode())
+                            banned_clients.append(client)
+
+                    for client in banned_clients:
+                        client.close()
+
                     client_index = nicknames.index(command)
 
                     client = clients[client_index]
@@ -232,12 +241,22 @@ def commands():
         elif command.startswith("brodcast "):
             command = command[8:]
 
-            brodcast(f"Server: {command}")
+            brodcast(f"Server: {command}".encode())
             print(f"Server: {command}")
         elif command.startswith("op "):
             command = command[3:]
 
             data["admins"].append(command)
+        elif command.startswith("deop "):
+            command = command[5:]
+
+            try:
+                data["admins"].remove(command)
+                console.print(f"[green][+] Successfully deoped {command}!")
+            except Exception as ex:
+                print(ex)
+            except KeyboardInterrupt:
+                pass
         elif command == None:
             pass
         else:
